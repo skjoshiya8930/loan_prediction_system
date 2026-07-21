@@ -16,7 +16,7 @@ except Exception as e:
 # ==========================================================
 # Prediction Function with Error Handling
 # ==========================================================
-def predict_loan_status([
+def predict_loan_status(
     no_of_dependents,
     education,
     self_employed,
@@ -28,7 +28,7 @@ def predict_loan_status([
     commercial_assets_value,
     luxury_assets_value,
     bank_asset_value,
-    ]):
+    ):
     # --- CODE BLOCK: INPUT CAPTURE & VALIDATION ---
     values = [
         no_of_dependents, education, self_employed, income_annum, 
