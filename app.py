@@ -16,7 +16,7 @@ except Exception as e:
 # ==========================================================
 # Prediction Function with Error Handling
 # ==========================================================
-def predict_loan_status(
+def predict_loan_status([
     no_of_dependents,
     education,
     self_employed,
@@ -28,7 +28,7 @@ def predict_loan_status(
     commercial_assets_value,
     luxury_assets_value,
     bank_asset_value,
-):
+    ]):
     # --- CODE BLOCK: INPUT CAPTURE & VALIDATION ---
     values = [
         no_of_dependents, education, self_employed, income_annum, 
@@ -37,8 +37,21 @@ def predict_loan_status(
     ]
 
     # 1. Empty input check
-    if any(v is None or str(v).strip() == "" for v in values):
-        return "❌ Please fill in all the input fields."
+    numeric_values = [
+        no_of_dependents,
+        income_annum,
+        loan_amount,
+        loan_term,
+        cibil_score,
+        residential_assets_value,
+        commercial_assets_value,
+        luxury_assets_value,
+        bank_asset_value
+]
+
+if any(v < 0 for v in numeric_values):
+    return "❌ Negative values are not allowed."
+
 
     # 2. Type casting
     try:
@@ -91,7 +104,7 @@ def predict_loan_status(
         prediction = deployed_rf.predict(input_data)
 
         # Assuming 1 = Approved, 0 = Rejected based on standard loan datasets
-        if prediction[0] == 1:
+        if prediction[0] == 0:
             return (
                 "🟢 Prediction Result\n\n"
                 "Loan Status: APPROVED\n\n"
