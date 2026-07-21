@@ -1,3 +1,5 @@
+# app.py
+
 import os
 import joblib
 import gradio as gr
@@ -11,9 +13,8 @@ except Exception as e:
     print(f"Warning: Model not found or error loading. {e}")
     deployed_rf = None
 
-
 # ==========================================================
-# Prediction Function
+# Prediction Function with Error Handling
 # ==========================================================
 def predict_loan_status(
     no_of_dependents,
@@ -28,30 +29,22 @@ def predict_loan_status(
     luxury_assets_value,
     bank_asset_value,
 ):
-
-    # Empty input validation
-    inputs = [
-        no_of_dependents,
-        education,
-        self_employed,
-        income_annum,
-        loan_amount,
-        loan_term,
-        cibil_score,
-        residential_assets_value,
-        commercial_assets_value,
-        luxury_assets_value,
-        bank_asset_value,
+    # --- CODE BLOCK: INPUT CAPTURE & VALIDATION ---
+    values = [
+        no_of_dependents, education, self_employed, income_annum, 
+        loan_amount, loan_term, cibil_score, residential_assets_value, 
+        commercial_assets_value, luxury_assets_value, bank_asset_value
     ]
 
-    if any(v is None for v in inputs):
-        return "❌ Please fill in all fields."
+    # 1. Empty input check
+    if any(v is None or str(v).strip() == "" for v in values):
+        return "❌ Please fill in all the input fields."
 
-    # Type conversion
+    # 2. Type casting
     try:
         no_of_dependents = int(no_of_dependents)
-        education = int(education)
-        self_employed = int(self_employed)
+        education = int(education) # From Dropdown
+        self_employed = int(self_employed) # From Dropdown
         income_annum = float(income_annum)
         loan_amount = float(loan_amount)
         loan_term = int(loan_term)
@@ -60,48 +53,27 @@ def predict_loan_status(
         commercial_assets_value = float(commercial_assets_value)
         luxury_assets_value = float(luxury_assets_value)
         bank_asset_value = float(bank_asset_value)
-
     except (ValueError, TypeError):
         return "❌ Please enter valid numeric values."
 
-    # Negative value validation
-    numeric_values = [
-        no_of_dependents,
-        income_annum,
-        loan_amount,
-        loan_term,
-        cibil_score,
-        residential_assets_value,
-        commercial_assets_value,
-        luxury_assets_value,
-        bank_asset_value,
-    ]
+    # 3. Negative value check
+    if any(v < 0 for v in values):
+        return "❌ Negative values are not allowed for financial metrics."
 
-    if any(v < 0 for v in numeric_values):
-        return "❌ Negative values are not allowed."
-
-    # Additional validations
+    # 4. Specific Range Validations
     if not (300 <= cibil_score <= 900):
         return "❌ CIBIL score must be between 300 and 900."
-
+    
     if no_of_dependents > 20:
-        return "❌ Number of dependents seems unusually high (Maximum 20)."
+        return "❌ Number of dependents seems unusually high (Max 20)."
+    # ----------------------------------------------
 
-    if income_annum <= 0:
-        return "❌ Annual income must be greater than zero."
-
-    if loan_amount <= 0:
-        return "❌ Loan amount must be greater than zero."
-
-    if loan_term <= 0:
-        return "❌ Loan term must be greater than zero."
-
-    # Model check
+    # --- CODE BLOCK: MODEL EXECUTION ---
     if deployed_rf is None:
-        return "❌ Model failed to load. Please check loan_prediction_model.pkl."
+        return "❌ Model failed to load. Please check your .pkl file."
 
-    # Prediction
     try:
+        # Array strictly ordered to match the X dataframe provided
         input_data = [[
             no_of_dependents,
             education,
@@ -113,12 +85,12 @@ def predict_loan_status(
             residential_assets_value,
             commercial_assets_value,
             luxury_assets_value,
-            bank_asset_value,
+            bank_asset_value
         ]]
 
         prediction = deployed_rf.predict(input_data)
 
-        # Change this if your model uses opposite labels
+        # Assuming 1 = Approved, 0 = Rejected based on standard loan datasets
         if prediction[0] == 0:
             return (
                 "🟢 Prediction Result\n\n"
@@ -134,55 +106,47 @@ def predict_loan_status(
 
     except Exception as e:
         return f"❌ Prediction failed.\n\nError: {str(e)}"
-
+    # -----------------------------------
 
 # ==========================================================
-# Description
+# Description & Footer
 # ==========================================================
+# --- CODE BLOCK: UI TEXT CONFIGURATION ---
 DESCRIPTION = """
 # 🏦 Loan Approval Prediction System
 
-This application predicts whether an applicant's loan will be **Approved** or **Rejected**
-using a trained **Random Forest Machine Learning Model**.
+This application predicts whether an applicant's loan will be *Approved* or *Rejected* using a trained *Random Forest Machine Learning Model*.
 
-Enter the applicant's financial and personal details below.
+Enter the applicant's financial and personal details below to run the assessment.
 """
 
 developer_info = """
 ### About the Developer
-
-**Created by:** Sachin
+*Created by:* Sachin
 
 ---
-
 ### 🛠️ Tools & Technologies Used
-
-- Machine Learning: Scikit-learn (Random Forest Classifier)
-- Web Framework: Gradio
-- Language: Python
-- Deployment: Render
+* *Machine Learning:* Scikit-learn (Random Forest Classifier)
+* *Web Framework:* Gradio
+* *Language:* Python
+* *Deployment:* Render
 """
-
+# -----------------------------------------
 
 # ==========================================================
-# Gradio Interface
+# Interface Setup
 # ==========================================================
+# --- CODE BLOCK: GRADIO COMPONENTS MAPPED TO FEATURES ---
 interface = gr.Interface(
     fn=predict_loan_status,
     inputs=[
         gr.Number(label="Number of Dependents"),
-        gr.Dropdown(
-            choices=[("Graduate", 1), ("Not Graduate", 0)],
-            label="Education Status"
-        ),
-        gr.Dropdown(
-            choices=[("Yes", 1), ("No", 0)],
-            label="Self Employed?"
-        ),
-        gr.Number(label="Annual Income"),
+        gr.Dropdown(choices=[("Graduate", 1), ("Not Graduate", 0)], label="Education Status"),
+        gr.Dropdown(choices=[("Yes", 1), ("No", 0)], label="Self Employed?"),
+        gr.Number(label="Annual Income (₹/$)"),
         gr.Number(label="Loan Amount Requested"),
-        gr.Number(label="Loan Term"),
-        gr.Number(label="CIBIL Score (300-900)"),
+        gr.Number(label="Loan Term (Months/Years)"),
+        gr.Number(label="CIBIL Score (300 - 900)"),
         gr.Number(label="Residential Assets Value"),
         gr.Number(label="Commercial Assets Value"),
         gr.Number(label="Luxury Assets Value"),
@@ -191,9 +155,9 @@ interface = gr.Interface(
     outputs=gr.Textbox(label="Assessment Result", lines=6),
     title="🏦 Loan Approval Prediction System",
     description=DESCRIPTION,
-    article=developer_info,
+    article=developer_info
 )
-
+# --------------------------------------------------------
 
 # ==========================================================
 # Launch
