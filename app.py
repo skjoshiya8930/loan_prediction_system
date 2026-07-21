@@ -122,7 +122,7 @@ Enter the applicant's financial and personal details below to run the assessment
 
 developer_info = """
 ### About the Developer
-*Created by:* Sachin
+*Created by:* Suhail Khan
 
 ---
 ### 🛠️ Tools & Technologies Used
