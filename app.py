@@ -119,7 +119,7 @@ def predict_loan_status(
         prediction = deployed_rf.predict(input_data)
 
         # Change this if your model uses opposite labels
-        if prediction[0] == 1:
+        if prediction[0] == 0:
             return (
                 "🟢 Prediction Result\n\n"
                 "Loan Status: APPROVED\n\n"
